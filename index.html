@@ -338,14 +338,10 @@
                                             <input type="number" step="0.01" class="form-control" id="entradaValorRecebido" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="entradaCategoria" class="form-label">Categoria</label>
-                                            <select class="form-select" id="entradaCategoria" required>
-                                                <option value="">Selecione...</option>
-                                                <option value="Vendas">Vendas</option>
-                                                <option value="Serviços">Serviços</option>
-                                                <option value="Consultoria">Consultoria</option>
-                                                <option value="Outros">Outros</option>
-                                            </select>
+                                            <label for="entradaCategoria" class="form-label">Categorias (tags)</label>
+                                            <input type="text" class="form-control" id="entradaCategoria" required list="categoriasSugeridas">
+                                            <datalist id="categoriasSugeridas"></datalist>
+                                            <div class="form-text">Digite as categorias separadas por vírgula.</div>
                                         </div>
                                         <button type="submit" class="btn btn-success w-100">
                                             <i class="bi bi-check-circle me-2"></i>Salvar Entrada
@@ -419,15 +415,9 @@
                                             <input type="number" step="0.01" class="form-control" id="saidaValorPresente" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="saidaCategoria" class="form-label">Categoria</label>
-                                            <select class="form-select" id="saidaCategoria" required>
-                                                <option value="">Selecione...</option>
-                                                <option value="Fixos">Fixos</option>
-                                                <option value="Recorrentes">Recorrentes</option>
-                                                <option value="Impostos">Impostos</option>
-                                                <option value="Extraordinários">Extraordinários</option>
-                                                <option value="Operacionais">Operacionais</option>
-                                            </select>
+                                            <label for="saidaCategoria" class="form-label">Categorias (tags)</label>
+                                            <input type="text" class="form-control" id="saidaCategoria" required list="categoriasSugeridas">
+                                            <div class="form-text">Digite as categorias separadas por vírgula.</div>
                                         </div>
                                         <button type="submit" class="btn btn-danger w-100">
                                             <i class="bi bi-check-circle me-2"></i>Salvar Saída
@@ -496,18 +486,9 @@
                                             <input type="number" min="1" max="31" class="form-control" id="contaDiaVencimento" required>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="contaCategoria" class="form-label">Categoria</label>
-                                            <select class="form-select" id="contaCategoria" required>
-                                                <option value="">Selecione...</option>
-                                                <option value="Moradia">Moradia</option>
-                                                <option value="Transporte">Transporte</option>
-                                                <option value="Alimentação">Alimentação</option>
-                                                <option value="Saúde">Saúde</option>
-                                                <option value="Educação">Educação</option>
-                                                <option value="Lazer">Lazer</option>
-                                                <option value="Assinaturas">Assinaturas</option>
-                                                <option value="Outros">Outros</option>
-                                            </select>
+                                            <label for="contaCategoria" class="form-label">Categorias (tags)</label>
+                                            <input type="text" class="form-control" id="contaCategoria" required list="categoriasSugeridas">
+                                            <div class="form-text">Digite as categorias separadas por vírgula.</div>
                                         </div>
                                         <button type="submit" class="btn btn-primary w-100">
                                             <i class="bi bi-check-circle me-2"></i>Salvar Conta
@@ -578,6 +559,7 @@
         let entradas = [];
         let saidas = [];
         let contasRecorrentes = [];
+        let categoriasSugeridas = [];
         let chart = null;
         let currentFiltroMesEntradas = new Date().toISOString().slice(0, 7);
         let currentFiltroMesSaidas = new Date().toISOString().slice(0, 7);
@@ -613,10 +595,27 @@
             return ref(database, `users/${currentUser.uid}/${path}`);
         }
 
+        async function salvarTags(tags) {
+            const updates = {};
+            tags.forEach(tag => {
+                if (!categoriasSugeridas.includes(tag)) {
+                    updates[tag] = true;
+                }
+            });
+            if (Object.keys(updates).length > 0) {
+                await update(getDbRef('categorias'), updates);
+            }
+        }
+
         async function salvarEntrada(entrada) {
             try {
                 showLoading();
                 entrada.timestamp = new Date().toISOString();
+                const tags = entrada.categoria.split(',').map(t => t.trim()).filter(t => t);
+                entrada.categoria = tags;
+                
+                await salvarTags(tags);
+
                 const newEntradaRef = push(getDbRef('entradas'));
                 await set(newEntradaRef, entrada);
                 showToast('Entrada salva com sucesso!');
@@ -634,6 +633,11 @@
             try {
                 showLoading();
                 saida.timestamp = new Date().toISOString();
+                const tags = saida.categoria.split(',').map(t => t.trim()).filter(t => t);
+                saida.categoria = tags;
+
+                await salvarTags(tags);
+
                 const newSaidaRef = push(getDbRef('saidas'));
                 await set(newSaidaRef, saida);
                 showToast('Saída salva com sucesso!');
@@ -674,6 +678,11 @@
         async function salvarContaRecorrente(conta) {
             try {
                 showLoading();
+                const tags = conta.categoria.split(',').map(t => t.trim()).filter(t => t);
+                conta.categoria = tags;
+
+                await salvarTags(tags);
+
                 const newContaRef = push(getDbRef('contasRecorrentes'));
                 await set(newContaRef, conta);
                 showToast('Conta recorrente salva com sucesso!');
@@ -750,10 +759,19 @@
                 row.insertCell().textContent = formatCurrency(entrada.valorRecebido);
                 
                 const categoriaCell = row.insertCell();
-                const categoriaBadge = document.createElement('span');
-                categoriaBadge.className = 'badge bg-success';
-                categoriaBadge.textContent = entrada.categoria;
-                categoriaCell.appendChild(categoriaBadge);
+                if (Array.isArray(entrada.categoria)) {
+                    entrada.categoria.forEach(cat => {
+                        const categoriaBadge = document.createElement('span');
+                        categoriaBadge.className = 'badge bg-success me-1';
+                        categoriaBadge.textContent = cat;
+                        categoriaCell.appendChild(categoriaBadge);
+                    });
+                } else if (entrada.categoria) {
+                    const categoriaBadge = document.createElement('span');
+                    categoriaBadge.className = 'badge bg-success';
+                    categoriaBadge.textContent = entrada.categoria;
+                    categoriaCell.appendChild(categoriaBadge);
+                }
 
                 const acoesCell = row.insertCell();
                 const deleteButton = document.createElement('button');
@@ -777,10 +795,19 @@
                 row.insertCell().textContent = formatCurrency(saida.valorPresente);
 
                 const categoriaCell = row.insertCell();
-                const categoriaBadge = document.createElement('span');
-                categoriaBadge.className = 'badge bg-warning';
-                categoriaBadge.textContent = saida.categoria;
-                categoriaCell.appendChild(categoriaBadge);
+                 if (Array.isArray(saida.categoria)) {
+                    saida.categoria.forEach(cat => {
+                        const categoriaBadge = document.createElement('span');
+                        categoriaBadge.className = 'badge bg-warning me-1';
+                        categoriaBadge.textContent = cat;
+                        categoriaCell.appendChild(categoriaBadge);
+                    });
+                } else if (saida.categoria) {
+                    const categoriaBadge = document.createElement('span');
+                    categoriaBadge.className = 'badge bg-warning';
+                    categoriaBadge.textContent = saida.categoria;
+                    categoriaCell.appendChild(categoriaBadge);
+                }
 
                 const acoesCell = row.insertCell();
                 const deleteButton = document.createElement('button');
@@ -806,10 +833,19 @@
                 row.insertCell().textContent = `Dia ${conta.diaVencimento}`;
                 
                 const categoriaCell = row.insertCell();
-                const categoriaBadge = document.createElement('span');
-                categoriaBadge.className = 'badge bg-info';
-                categoriaBadge.textContent = conta.categoria;
-                categoriaCell.appendChild(categoriaBadge);
+                if (Array.isArray(conta.categoria)) {
+                    conta.categoria.forEach(cat => {
+                        const categoriaBadge = document.createElement('span');
+                        categoriaBadge.className = 'badge bg-info me-1';
+                        categoriaBadge.textContent = cat;
+                        categoriaCell.appendChild(categoriaBadge);
+                    });
+                } else if (conta.categoria) {
+                    const categoriaBadge = document.createElement('span');
+                    categoriaBadge.className = 'badge bg-info';
+                    categoriaBadge.textContent = conta.categoria;
+                    categoriaCell.appendChild(categoriaBadge);
+                }
 
                 const acoesCell = row.insertCell();
                 const payButton = document.createElement('button');
@@ -1067,6 +1103,19 @@
                 contasRecorrentes = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
                 renderContasRecorrentes();
                 updateDashboard();
+            });
+
+            const categoriasRef = getDbRef('categorias');
+            onValue(categoriasRef, (snapshot) => {
+                const data = snapshot.val();
+                categoriasSugeridas = data ? Object.keys(data) : [];
+                const datalist = document.getElementById('categoriasSugeridas');
+                datalist.innerHTML = '';
+                categoriasSugeridas.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat;
+                    datalist.appendChild(option);
+                });
             });
             
             showToast('Aplicação conectada ao Firebase!');
