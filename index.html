@@ -633,7 +633,9 @@
             try {
                 showLoading();
                 saida.timestamp = new Date().toISOString();
-                const tags = saida.categoria.split(',').map(t => t.trim()).filter(t => t);
+                const tags = typeof saida.categoria === 'string'
+                    ? saida.categoria.split(',').map(t => t.trim()).filter(t => t)
+                    : (Array.isArray(saida.categoria) ? saida.categoria : []);
                 saida.categoria = tags;
 
                 await salvarTags(tags);
