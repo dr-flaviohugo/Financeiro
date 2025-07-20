@@ -555,7 +555,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getDatabase, ref, onValue, push, remove, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-        import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -1103,7 +1103,7 @@
             const provider = new GoogleAuthProvider();
             authError.classList.add('d-none');
             
-            signInWithPopup(auth, provider)
+            signInWithPopup(auth, provider, browserPopupRedirectResolver)
                 .then((result) => {
                     const user = result.user;
                     showToast(`Bem-vindo, ${user.displayName}!`, 'success');
