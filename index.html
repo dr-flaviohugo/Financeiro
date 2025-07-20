@@ -148,378 +148,396 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <i class="bi bi-graph-up me-2"></i>
-                Financeiro IOSA
-            </a>
-            <div class="d-flex align-items-center">
-                <span class="badge bg-warning me-2" id="status">Firebase</span>
-                <button class="btn btn-outline-primary btn-sm" onclick="exportData()">
-                    <i class="bi bi-download"></i>
-                </button>
-            </div>
+    <!-- Login Screen -->
+    <div id="login-container" class="container vh-100 d-flex justify-content-center align-items-center">
+        <div class="card p-4" style="width: 100%; max-width: 400px;">
+            <h3 class="text-center mb-4">Login</h3>
+            <button id="googleLoginButton" class="btn btn-danger w-100">
+                <i class="bi bi-google me-2"></i> Entrar com Google
+            </button>
+            <div id="auth-error" class="alert alert-danger mt-3 d-none"></div>
         </div>
-    </nav>
+    </div>
 
-    <div class="container-fluid mt-4">
-        <!-- Loading Spinner -->
-        <div class="loading text-center" id="loading">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Carregando...</span>
+    <!-- Main App Container (initially hidden) -->
+    <div id="app-container" class="d-none">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Financeiro IOSA
+                </a>
+                <div class="d-flex align-items-center">
+                    <span id="userEmail" class="me-3"></span>
+                    <span class="badge bg-warning me-2" id="status">Firebase</span>
+                    <button class="btn btn-outline-primary btn-sm" onclick="exportData()">
+                        <i class="bi bi-download"></i>
+                    </button>
+                    <button id="logoutButton" class="btn btn-outline-danger btn-sm ms-2">
+                        <i class="bi bi-box-arrow-right"></i> Sair
+                    </button>
+                </div>
             </div>
-        </div>
+        </nav>
 
-        <!-- Tabs Navigation -->
-        <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
-                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="entradas-tab" data-bs-toggle="tab" data-bs-target="#entradas" type="button" role="tab">
-                    <i class="bi bi-arrow-up-circle me-2"></i>Entradas
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="saidas-tab" data-bs-toggle="tab" data-bs-target="#saidas" type="button" role="tab">
-                    <i class="bi bi-arrow-down-circle me-2"></i>Saídas
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="contas-pagar-tab" data-bs-toggle="tab" data-bs-target="#contas-pagar" type="button" role="tab">
-                    <i class="bi bi-calendar-week me-2"></i>Contas a Pagar
-                </button>
-            </li>
-        </ul>
-
-        <!-- Tab Content -->
-        <div class="tab-content" id="mainTabContent">
-            <!-- Dashboard -->
-            <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
-                <div class="row mb-4">
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="card stats-card entrada">
-                            <div class="card-body text-center">
-                                <i class="bi bi-arrow-up-circle fs-1 mb-2"></i>
-                                <h5 class="card-title">Total Entradas</h5>
-                                <h3 class="mb-0" id="totalEntradas">R$ 0,00</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="card stats-card saida">
-                            <div class="card-body text-center">
-                                <i class="bi bi-arrow-down-circle fs-1 mb-2"></i>
-                                <h5 class="card-title">Total Saídas</h5>
-                                <h3 class="mb-0" id="totalSaidas">R$ 0,00</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="card stats-card saldo">
-                            <div class="card-body text-center">
-                                <i class="bi bi-wallet2 fs-1 mb-2"></i>
-                                <h5 class="card-title">Saldo</h5>
-                                <h3 class="mb-0" id="saldo">R$ 0,00</h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3 col-6 mb-3">
-                        <div class="card stats-card">
-                            <div class="card-body text-center">
-                                <i class="bi bi-calendar-event fs-1 mb-2"></i>
-                                <h5 class="card-title">Este Mês</h5>
-                                <h6 class="mb-0" id="mesAtual">Janeiro 2025</h6>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-lg-8 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Gráfico Financeiro</h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="financeChart" height="100"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Transações Recentes</h5>
-                            </div>
-                            <div class="card-body" id="recentTransactions">
-                                <!-- Transações recentes serão inseridas aqui -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Lembretes de Pagamento</h5>
-                            </div>
-                            <div class="card-body" id="paymentReminders">
-                                <!-- Lembretes de pagamento serão inseridos aqui -->
-                                <p class="text-muted">Nenhuma conta pendente para este mês.</p>
-                            </div>
-                        </div>
-                    </div>
+        <div class="container-fluid mt-4">
+            <!-- Loading Spinner -->
+            <div class="loading text-center" id="loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
                 </div>
             </div>
 
-            <!-- Entradas -->
-            <div class="tab-pane fade" id="entradas" role="tabpanel">
-                <div class="row">
-                    <div class="col-lg-4 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-plus-circle me-2"></i>Nova Entrada
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="entradaForm">
-                                    <div class="mb-3">
-                                        <label for="entradaNumero" class="form-label">Número</label>
-                                        <input type="text" class="form-control" id="entradaNumero" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="entradaData" class="form-label">Data</label>
-                                        <input type="date" class="form-control" id="entradaData" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="entradaDescricao" class="form-label">Descrição</label>
-                                        <input type="text" class="form-control" id="entradaDescricao" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="entradaValorTotal" class="form-label">Valor Total</label>
-                                        <input type="number" step="0.01" class="form-control" id="entradaValorTotal" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="entradaFormaPagamento" class="form-label">Forma de Pagamento</label>
-                                        <select class="form-select" id="entradaFormaPagamento" required>
-                                            <option value="">Selecione...</option>
-                                            <option value="Dinheiro">Dinheiro</option>
-                                            <option value="PIX">PIX</option>
-                                            <option value="Cartão Débito">Cartão Débito</option>
-                                            <option value="Cartão Crédito">Cartão Crédito</option>
-                                            <option value="Transferência">Transferência</option>
-                                            <option value="Cheque">Cheque</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="entradaValorRecebido" class="form-label">Valor Recebido</label>
-                                        <input type="number" step="0.01" class="form-control" id="entradaValorRecebido" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="entradaCategoria" class="form-label">Categoria</label>
-                                        <select class="form-select" id="entradaCategoria" required>
-                                            <option value="">Selecione...</option>
-                                            <option value="Vendas">Vendas</option>
-                                            <option value="Serviços">Serviços</option>
-                                            <option value="Consultoria">Consultoria</option>
-                                            <option value="Outros">Outros</option>
-                                        </select>
-                                    </div>
-                                    <button type="submit" class="btn btn-success w-100">
-                                        <i class="bi bi-check-circle me-2"></i>Salvar Entrada
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-8 mb-4">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Lista de Entradas</h5>
-                                <div class="d-flex gap-2">
-                                    <input type="month" class="form-control form-control-sm" id="filtroMesEntradas" style="width: auto;">
-                                    <button class="btn btn-outline-primary btn-sm" onclick="filtrarEntradas()">
-                                        <i class="bi bi-filter"></i>
-                                    </button>
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="entradas-tab" data-bs-toggle="tab" data-bs-target="#entradas" type="button" role="tab">
+                        <i class="bi bi-arrow-up-circle me-2"></i>Entradas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="saidas-tab" data-bs-toggle="tab" data-bs-target="#saidas" type="button" role="tab">
+                        <i class="bi bi-arrow-down-circle me-2"></i>Saídas
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="contas-pagar-tab" data-bs-toggle="tab" data-bs-target="#contas-pagar" type="button" role="tab">
+                        <i class="bi bi-calendar-week me-2"></i>Contas a Pagar
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="mainTabContent">
+                <!-- Dashboard -->
+                <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                    <div class="row mb-4">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="card stats-card entrada">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-arrow-up-circle fs-1 mb-2"></i>
+                                    <h5 class="card-title">Total Entradas</h5>
+                                    <h3 class="mb-0" id="totalEntradas">R$ 0,00</h3>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Número</th>
-                                                <th>Data</th>
-                                                <th>Descrição</th>
-                                                <th>Valor Total</th>
-                                                <th>Recebido</th>
-                                                <th>Categoria</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="listaEntradas">
-                                            <!-- Entradas serão inseridas aqui -->
-                                        </tbody>
-                                    </table>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="card stats-card saida">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-arrow-down-circle fs-1 mb-2"></i>
+                                    <h5 class="card-title">Total Saídas</h5>
+                                    <h3 class="mb-0" id="totalSaidas">R$ 0,00</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="card stats-card saldo">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-wallet2 fs-1 mb-2"></i>
+                                    <h5 class="card-title">Saldo</h5>
+                                    <h3 class="mb-0" id="saldo">R$ 0,00</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="card stats-card">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-calendar-event fs-1 mb-2"></i>
+                                    <h5 class="card-title">Este Mês</h5>
+                                    <h6 class="mb-0" id="mesAtual">Janeiro 2025</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-8 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Gráfico Financeiro</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="financeChart" height="100"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Transações Recentes</h5>
+                                </div>
+                                <div class="card-body" id="recentTransactions">
+                                    <!-- Transações recentes serão inseridas aqui -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="bi bi-bell me-2"></i>Lembretes de Pagamento</h5>
+                                </div>
+                                <div class="card-body" id="paymentReminders">
+                                    <!-- Lembretes de pagamento serão inseridos aqui -->
+                                    <p class="text-muted">Nenhuma conta pendente para este mês.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Saídas -->
-            <div class="tab-pane fade" id="saidas" role="tabpanel">
-                <div class="row">
-                    <div class="col-lg-4 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-dash-circle me-2"></i>Nova Saída
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="saidaForm">
-                                    <div class="mb-3">
-                                        <label for="saidaData" class="form-label">Data</label>
-                                        <input type="date" class="form-control" id="saidaData" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="saidaDescricao" class="form-label">Descrição</label>
-                                        <input type="text" class="form-control" id="saidaDescricao" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="saidaValorTotal" class="form-label">Valor Total</label>
-                                        <input type="number" step="0.01" class="form-control" id="saidaValorTotal" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="saidaValorPresente" class="form-label">Valor Presente</label>
-                                        <input type="number" step="0.01" class="form-control" id="saidaValorPresente" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="saidaCategoria" class="form-label">Categoria</label>
-                                        <select class="form-select" id="saidaCategoria" required>
-                                            <option value="">Selecione...</option>
-                                            <option value="Fixos">Fixos</option>
-                                            <option value="Recorrentes">Recorrentes</option>
-                                            <option value="Impostos">Impostos</option>
-                                            <option value="Extraordinários">Extraordinários</option>
-                                            <option value="Operacionais">Operacionais</option>
-                                        </select>
-                                    </div>
-                                    <button type="submit" class="btn btn-danger w-100">
-                                        <i class="bi bi-check-circle me-2"></i>Salvar Saída
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-8 mb-4">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Lista de Saídas</h5>
-                                <div class="d-flex gap-2">
-                                    <input type="month" class="form-control form-control-sm" id="filtroMesSaidas" style="width: auto;">
-                                    <button class="btn btn-outline-primary btn-sm" onclick="filtrarSaidas()">
-                                        <i class="bi bi-filter"></i>
-                                    </button>
+                <!-- Entradas -->
+                <div class="tab-pane fade" id="entradas" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-4 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-plus-circle me-2"></i>Nova Entrada
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="entradaForm">
+                                        <div class="mb-3">
+                                            <label for="entradaNumero" class="form-label">Número</label>
+                                            <input type="text" class="form-control" id="entradaNumero" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="entradaData" class="form-label">Data</label>
+                                            <input type="date" class="form-control" id="entradaData" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="entradaDescricao" class="form-label">Descrição</label>
+                                            <input type="text" class="form-control" id="entradaDescricao" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="entradaValorTotal" class="form-label">Valor Total</label>
+                                            <input type="number" step="0.01" class="form-control" id="entradaValorTotal" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="entradaFormaPagamento" class="form-label">Forma de Pagamento</label>
+                                            <select class="form-select" id="entradaFormaPagamento" required>
+                                                <option value="">Selecione...</option>
+                                                <option value="Dinheiro">Dinheiro</option>
+                                                <option value="PIX">PIX</option>
+                                                <option value="Cartão Débito">Cartão Débito</option>
+                                                <option value="Cartão Crédito">Cartão Crédito</option>
+                                                <option value="Transferência">Transferência</option>
+                                                <option value="Cheque">Cheque</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="entradaValorRecebido" class="form-label">Valor Recebido</label>
+                                            <input type="number" step="0.01" class="form-control" id="entradaValorRecebido" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="entradaCategoria" class="form-label">Categoria</label>
+                                            <select class="form-select" id="entradaCategoria" required>
+                                                <option value="">Selecione...</option>
+                                                <option value="Vendas">Vendas</option>
+                                                <option value="Serviços">Serviços</option>
+                                                <option value="Consultoria">Consultoria</option>
+                                                <option value="Outros">Outros</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="bi bi-check-circle me-2"></i>Salvar Entrada
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Data</th>
-                                                <th>Descrição</th>
-                                                <th>Valor Total</th>
-                                                <th>Valor Presente</th>
-                                                <th>Categoria</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="listaSaidas">
-                                            <!-- Saídas serão inseridas aqui -->
-                                        </tbody>
-                                    </table>
+                        </div>
+                        <div class="col-lg-8 mb-4">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Lista de Entradas</h5>
+                                    <div class="d-flex gap-2">
+                                        <input type="month" class="form-control form-control-sm" id="filtroMesEntradas" style="width: auto;">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="filtrarEntradas()">
+                                            <i class="bi bi-filter"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Número</th>
+                                                    <th>Data</th>
+                                                    <th>Descrição</th>
+                                                    <th>Valor Total</th>
+                                                    <th>Recebido</th>
+                                                    <th>Categoria</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="listaEntradas">
+                                                <!-- Entradas serão inseridas aqui -->
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Contas a Pagar -->
-            <div class="tab-pane fade" id="contas-pagar" role="tabpanel">
-                <div class="row">
-                    <div class="col-lg-4 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="bi bi-plus-circle me-2"></i>Nova Conta Recorrente
-                                </h5>
+                <!-- Saídas -->
+                <div class="tab-pane fade" id="saidas" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-4 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-dash-circle me-2"></i>Nova Saída
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="saidaForm">
+                                        <div class="mb-3">
+                                            <label for="saidaData" class="form-label">Data</label>
+                                            <input type="date" class="form-control" id="saidaData" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="saidaDescricao" class="form-label">Descrição</label>
+                                            <input type="text" class="form-control" id="saidaDescricao" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="saidaValorTotal" class="form-label">Valor Total</label>
+                                            <input type="number" step="0.01" class="form-control" id="saidaValorTotal" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="saidaValorPresente" class="form-label">Valor Presente</label>
+                                            <input type="number" step="0.01" class="form-control" id="saidaValorPresente" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="saidaCategoria" class="form-label">Categoria</label>
+                                            <select class="form-select" id="saidaCategoria" required>
+                                                <option value="">Selecione...</option>
+                                                <option value="Fixos">Fixos</option>
+                                                <option value="Recorrentes">Recorrentes</option>
+                                                <option value="Impostos">Impostos</option>
+                                                <option value="Extraordinários">Extraordinários</option>
+                                                <option value="Operacionais">Operacionais</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-danger w-100">
+                                            <i class="bi bi-check-circle me-2"></i>Salvar Saída
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <form id="contaRecorrenteForm">
-                                    <div class="mb-3">
-                                        <label for="contaDescricao" class="form-label">Descrição</label>
-                                        <input type="text" class="form-control" id="contaDescricao" required>
+                        </div>
+                        <div class="col-lg-8 mb-4">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Lista de Saídas</h5>
+                                    <div class="d-flex gap-2">
+                                        <input type="month" class="form-control form-control-sm" id="filtroMesSaidas" style="width: auto;">
+                                        <button class="btn btn-outline-primary btn-sm" onclick="filtrarSaidas()">
+                                            <i class="bi bi-filter"></i>
+                                        </button>
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="contaValor" class="form-label">Valor</label>
-                                        <input type="number" step="0.01" class="form-control" id="contaValor" required>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Data</th>
+                                                    <th>Descrição</th>
+                                                    <th>Valor Total</th>
+                                                    <th>Valor Presente</th>
+                                                    <th>Categoria</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="listaSaidas">
+                                                <!-- Saídas serão inseridas aqui -->
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="contaDiaVencimento" class="form-label">Dia do Vencimento</label>
-                                        <input type="number" min="1" max="31" class="form-control" id="contaDiaVencimento" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="contaCategoria" class="form-label">Categoria</label>
-                                        <select class="form-select" id="contaCategoria" required>
-                                            <option value="">Selecione...</option>
-                                            <option value="Moradia">Moradia</option>
-                                            <option value="Transporte">Transporte</option>
-                                            <option value="Alimentação">Alimentação</option>
-                                            <option value="Saúde">Saúde</option>
-                                            <option value="Educação">Educação</option>
-                                            <option value="Lazer">Lazer</option>
-                                            <option value="Assinaturas">Assinaturas</option>
-                                            <option value="Outros">Outros</option>
-                                        </select>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-check-circle me-2"></i>Salvar Conta
-                                    </button>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-8 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Lista de Contas Recorrentes</h5>
+                </div>
+
+                <!-- Contas a Pagar -->
+                <div class="tab-pane fade" id="contas-pagar" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-4 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-plus-circle me-2"></i>Nova Conta Recorrente
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="contaRecorrenteForm">
+                                        <div class="mb-3">
+                                            <label for="contaDescricao" class="form-label">Descrição</label>
+                                            <input type="text" class="form-control" id="contaDescricao" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="contaValor" class="form-label">Valor</label>
+                                            <input type="number" step="0.01" class="form-control" id="contaValor" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="contaDiaVencimento" class="form-label">Dia do Vencimento</label>
+                                            <input type="number" min="1" max="31" class="form-control" id="contaDiaVencimento" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="contaCategoria" class="form-label">Categoria</label>
+                                            <select class="form-select" id="contaCategoria" required>
+                                                <option value="">Selecione...</option>
+                                                <option value="Moradia">Moradia</option>
+                                                <option value="Transporte">Transporte</option>
+                                                <option value="Alimentação">Alimentação</option>
+                                                <option value="Saúde">Saúde</option>
+                                                <option value="Educação">Educação</option>
+                                                <option value="Lazer">Lazer</option>
+                                                <option value="Assinaturas">Assinaturas</option>
+                                                <option value="Outros">Outros</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-check-circle me-2"></i>Salvar Conta
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Descrição</th>
-                                                <th>Valor</th>
-                                                <th>Vencimento</th>
-                                                <th>Categoria</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="listaContasRecorrentes">
-                                            <!-- Contas recorrentes serão inseridas aqui -->
-                                        </tbody>
-                                    </table>
+                        </div>
+                        <div class="col-lg-8 mb-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Lista de Contas Recorrentes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Descrição</th>
+                                                    <th>Valor</th>
+                                                    <th>Vencimento</th>
+                                                    <th>Categoria</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="listaContasRecorrentes">
+                                                <!-- Contas recorrentes serão inseridas aqui -->
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -536,7 +554,8 @@
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getDatabase, ref, onValue, push, remove, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -552,8 +571,10 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
 
         // Global variables
+        let currentUser = null;
         let entradas = [];
         let saidas = [];
         let contasRecorrentes = [];
@@ -587,11 +608,16 @@
         }
 
         // Firebase operations
+        function getDbRef(path) {
+            if (!currentUser) throw new Error("Usuário não autenticado.");
+            return ref(database, `users/${currentUser.uid}/${path}`);
+        }
+
         async function salvarEntrada(entrada) {
             try {
                 showLoading();
                 entrada.timestamp = new Date().toISOString();
-                const newEntradaRef = push(ref(database, 'entradas'));
+                const newEntradaRef = push(getDbRef('entradas'));
                 await set(newEntradaRef, entrada);
                 showToast('Entrada salva com sucesso!');
                 document.getElementById('entradaForm').reset();
@@ -608,7 +634,7 @@
             try {
                 showLoading();
                 saida.timestamp = new Date().toISOString();
-                const newSaidaRef = push(ref(database, 'saidas'));
+                const newSaidaRef = push(getDbRef('saidas'));
                 await set(newSaidaRef, saida);
                 showToast('Saída salva com sucesso!');
                 document.getElementById('saidaForm').reset();
@@ -624,7 +650,7 @@
         window.excluirEntrada = async function(id) {
             if (confirm('Tem certeza que deseja excluir esta entrada?')) {
                 try {
-                    await remove(ref(database, `entradas/${id}`));
+                    await remove(getDbRef(`entradas/${id}`));
                     showToast('Entrada excluída com sucesso!');
                 } catch (error) {
                     console.error("Erro ao excluir entrada:", error);
@@ -636,7 +662,7 @@
         window.excluirSaida = async function(id) {
             if (confirm('Tem certeza que deseja excluir esta saída?')) {
                 try {
-                    await remove(ref(database, `saidas/${id}`));
+                    await remove(getDbRef(`saidas/${id}`));
                     showToast('Saída excluída com sucesso!');
                 } catch (error) {
                     console.error("Erro ao excluir saída:", error);
@@ -648,7 +674,7 @@
         async function salvarContaRecorrente(conta) {
             try {
                 showLoading();
-                const newContaRef = push(ref(database, 'contasRecorrentes'));
+                const newContaRef = push(getDbRef('contasRecorrentes'));
                 await set(newContaRef, conta);
                 showToast('Conta recorrente salva com sucesso!');
                 document.getElementById('contaRecorrenteForm').reset();
@@ -663,7 +689,7 @@
         window.excluirContaRecorrente = async function(id) {
             if (confirm('Tem certeza que deseja excluir esta conta recorrente?')) {
                 try {
-                    await remove(ref(database, `contasRecorrentes/${id}`));
+                    await remove(getDbRef(`contasRecorrentes/${id}`));
                     showToast('Conta recorrente excluída com sucesso!');
                 } catch (error) {
                     console.error("Erro ao excluir conta recorrente:", error);
@@ -699,9 +725,9 @@
             await salvarSaida(saida);
 
             const updates = {};
-            updates[`/contasRecorrentes/${id}/pagamentos/${yearMonth}`] = true;
+            updates[`users/${currentUser.uid}/contasRecorrentes/${id}/pagamentos/${yearMonth}`] = true;
             try {
-                await set(ref(database), updates);
+                await update(ref(database), updates);
                 showToast('Pagamento registrado com sucesso!');
             } catch (error) {
                 console.error("Erro ao marcar conta como paga:", error);
@@ -1016,7 +1042,7 @@
             document.getElementById('filtroMesEntradas').value = currentFiltroMesEntradas;
             document.getElementById('filtroMesSaidas').value = currentFiltroMesSaidas;
 
-            const entradasRef = ref(database, 'entradas');
+            const entradasRef = getDbRef('entradas');
             onValue(entradasRef, (snapshot) => {
                 const data = snapshot.val();
                 entradas = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
@@ -1026,21 +1052,19 @@
                 showLoading(false);
             });
 
-            const saidasRef = ref(database, 'saidas');
+            const saidasRef = getDbRef('saidas');
             onValue(saidasRef, (snapshot) => {
                 const data = snapshot.val();
                 saidas = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-                saidas.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 renderSaidas();
                 updateDashboard();
                 showLoading(false);
             });
 
-            const contasRef = ref(database, 'contasRecorrentes');
+            const contasRef = getDbRef('contasRecorrentes');
             onValue(contasRef, (snapshot) => {
                 const data = snapshot.val();
                 contasRecorrentes = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-                contasRecorrentes.sort((a, b) => a.diaVencimento - b.diaVencimento);
                 renderContasRecorrentes();
                 updateDashboard();
             });
@@ -1048,8 +1072,50 @@
             showToast('Aplicação conectada ao Firebase!');
         }
 
+        // --- AUTHENTICATION LOGIC ---
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app-container');
+        const authError = document.getElementById('auth-error');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                loginContainer.classList.add('d-none');
+                appContainer.classList.remove('d-none');
+                document.getElementById('userEmail').textContent = user.email;
+                initApp();
+            } else {
+                // User is signed out
+                currentUser = null;
+                loginContainer.classList.remove('d-none');
+                appContainer.classList.add('d-none');
+                if(chart) chart.destroy();
+            }
+        });
+
+
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        document.getElementById('googleLoginButton').addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            authError.classList.add('d-none');
+            
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    const user = result.user;
+                    showToast(`Bem-vindo, ${user.displayName}!`, 'success');
+                }).catch((error) => {
+                    console.error("Erro no login com Google:", error);
+                    authError.textContent = "Falha ao autenticar com o Google. Tente novamente.";
+                    authError.classList.remove('d-none');
+                });
+        });
+
         // Start app when page loads
-        document.addEventListener('DOMContentLoaded', initApp);
+        // document.addEventListener('DOMContentLoaded', initApp); // We now call initApp via onAuthStateChanged
     </script>
 </body>
 </html>
