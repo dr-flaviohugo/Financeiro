@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador Financeiro</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #ca8a04;
+        }
+
+        body {
+            background-color: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 600;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            border-radius: 12px;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+            border-radius: 12px;
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 12px 12px 0 0;
+            border: none;
+            background-color: transparent;
+            color: #64748b;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background-color: #f1f5f9;
+            border: none;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .badge {
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+        }
+
+        .stats-card.entrada {
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+        }
+
+        .stats-card.saida {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+        }
+
+        .stats-card.saldo {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+        }
+
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding: 8px;
+            }
+            
+            .card {
+                margin-bottom: 16px;
+            }
+            
+            .table-responsive {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-graph-up me-2"></i>
+                Financeiro IOSA
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-warning me-2" id="status">Firebase</span>
+                <button class="btn btn-outline-primary btn-sm" onclick="exportData()">
+                    <i class="bi bi-download"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Loading Spinner -->
+        <div class="loading text-center" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="entradas-tab" data-bs-toggle="tab" data-bs-target="#entradas" type="button" role="tab">
+                    <i class="bi bi-arrow-up-circle me-2"></i>Entradas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="saidas-tab" data-bs-toggle="tab" data-bs-target="#saidas" type="button" role="tab">
+                    <i class="bi bi-arrow-down-circle me-2"></i>Saídas
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="mainTabContent">
+            <!-- Dashboard -->
+            <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                <div class="row mb-4">
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card stats-card entrada">
+                            <div class="card-body text-center">
+                                <i class="bi bi-arrow-up-circle fs-1 mb-2"></i>
+                                <h5 class="card-title">Total Entradas</h5>
+                                <h3 class="mb-0" id="totalEntradas">R$ 0,00</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card stats-card saida">
+                            <div class="card-body text-center">
+                                <i class="bi bi-arrow-down-circle fs-1 mb-2"></i>
+                                <h5 class="card-title">Total Saídas</h5>
+                                <h3 class="mb-0" id="totalSaidas">R$ 0,00</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card stats-card saldo">
+                            <div class="card-body text-center">
+                                <i class="bi bi-wallet2 fs-1 mb-2"></i>
+                                <h5 class="card-title">Saldo</h5>
+                                <h3 class="mb-0" id="saldo">R$ 0,00</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3">
+                        <div class="card stats-card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-calendar-event fs-1 mb-2"></i>
+                                <h5 class="card-title">Este Mês</h5>
+                                <h6 class="mb-0" id="mesAtual">Janeiro 2025</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-8 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Gráfico Financeiro</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="financeChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Transações Recentes</h5>
+                            </div>
+                            <div class="card-body" id="recentTransactions">
+                                <!-- Transações recentes serão inseridas aqui -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entradas -->
+            <div class="tab-pane fade" id="entradas" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-plus-circle me-2"></i>Nova Entrada
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="entradaForm">
+                                    <div class="mb-3">
+                                        <label for="entradaNumero" class="form-label">Número</label>
+                                        <input type="text" class="form-control" id="entradaNumero" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="entradaData" class="form-label">Data</label>
+                                        <input type="date" class="form-control" id="entradaData" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="entradaDescricao" class="form-label">Descrição</label>
+                                        <input type="text" class="form-control" id="entradaDescricao" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="entradaValorTotal" class="form-label">Valor Total</label>
+                                        <input type="number" step="0.01" class="form-control" id="entradaValorTotal" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="entradaFormaPagamento" class="form-label">Forma de Pagamento</label>
+                                        <select class="form-select" id="entradaFormaPagamento" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="Dinheiro">Dinheiro</option>
+                                            <option value="PIX">PIX</option>
+                                            <option value="Cartão Débito">Cartão Débito</option>
+                                            <option value="Cartão Crédito">Cartão Crédito</option>
+                                            <option value="Transferência">Transferência</option>
+                                            <option value="Cheque">Cheque</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="entradaValorRecebido" class="form-label">Valor Recebido</label>
+                                        <input type="number" step="0.01" class="form-control" id="entradaValorRecebido" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="entradaCategoria" class="form-label">Categoria</label>
+                                        <select class="form-select" id="entradaCategoria" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="Vendas">Vendas</option>
+                                            <option value="Serviços">Serviços</option>
+                                            <option value="Consultoria">Consultoria</option>
+                                            <option value="Outros">Outros</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-check-circle me-2"></i>Salvar Entrada
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-8 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Lista de Entradas</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="month" class="form-control form-control-sm" id="filtroMesEntradas" style="width: auto;">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="filtrarEntradas()">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Número</th>
+                                                <th>Data</th>
+                                                <th>Descrição</th>
+                                                <th>Valor Total</th>
+                                                <th>Recebido</th>
+                                                <th>Categoria</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="listaEntradas">
+                                            <!-- Entradas serão inseridas aqui -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saídas -->
+            <div class="tab-pane fade" id="saidas" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4 mb-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-dash-circle me-2"></i>Nova Saída
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="saidaForm">
+                                    <div class="mb-3">
+                                        <label for="saidaData" class="form-label">Data</label>
+                                        <input type="date" class="form-control" id="saidaData" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="saidaDescricao" class="form-label">Descrição</label>
+                                        <input type="text" class="form-control" id="saidaDescricao" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="saidaValorTotal" class="form-label">Valor Total</label>
+                                        <input type="number" step="0.01" class="form-control" id="saidaValorTotal" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="saidaValorPresente" class="form-label">Valor Presente</label>
+                                        <input type="number" step="0.01" class="form-control" id="saidaValorPresente" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="saidaCategoria" class="form-label">Categoria</label>
+                                        <select class="form-select" id="saidaCategoria" required>
+                                            <option value="">Selecione...</option>
+                                            <option value="Fixos">Fixos</option>
+                                            <option value="Recorrentes">Recorrentes</option>
+                                            <option value="Impostos">Impostos</option>
+                                            <option value="Extraordinários">Extraordinários</option>
+                                            <option value="Operacionais">Operacionais</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-danger w-100">
+                                        <i class="bi bi-check-circle me-2"></i>Salvar Saída
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-8 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Lista de Saídas</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="month" class="form-control form-control-sm" id="filtroMesSaidas" style="width: auto;">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="filtrarSaidas()">
+                                        <i class="bi bi-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Descrição</th>
+                                                <th>Valor Total</th>
+                                                <th>Valor Presente</th>
+                                                <th>Categoria</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="listaSaidas">
+                                            <!-- Saídas serão inseridas aqui -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Firebase and App Script -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getDatabase, ref, onValue, push, remove, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvM_lBd18uPIyiay8Wv8vZ1xkuzSA4cHc",
+            authDomain: "financeiro-iosa.firebaseapp.com",
+            databaseURL: "https://financeiro-iosa-default-rtdb.firebaseio.com",
+            projectId: "financeiro-iosa",
+            storageBucket: "financeiro-iosa.firebasestorage.app",
+            messagingSenderId: "114505800327",
+            appId: "1:114505800327:web:de6853b95db0f89ecd7622"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Global variables
+        let entradas = [];
+        let saidas = [];
+        let chart = null;
+        let currentFiltroMesEntradas = new Date().toISOString().slice(0, 7);
+        let currentFiltroMesSaidas = new Date().toISOString().slice(0, 7);
+
+        // Utility functions
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        }
+
+        function formatDate(date) {
+            // Adiciona um dia para corrigir o problema de fuso horário
+            const adjustedDate = new Date(date);
+            adjustedDate.setUTCDate(adjustedDate.getUTCDate() + 1);
+            return adjustedDate.toLocaleDateString('pt-BR');
+        }
+
+        function showLoading(show = true) {
+            document.getElementById('loading').classList.toggle('show', show);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+            toast.style.zIndex = '9999';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Firebase operations
+        async function salvarEntrada(entrada) {
+            try {
+                showLoading();
+                entrada.timestamp = new Date().toISOString();
+                const newEntradaRef = push(ref(database, 'entradas'));
+                await set(newEntradaRef, entrada);
+                showToast('Entrada salva com sucesso!');
+                document.getElementById('entradaForm').reset();
+                setDefaultDates();
+            } catch (error) {
+                console.error("Erro ao salvar entrada:", error);
+                showToast('Erro ao salvar entrada', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function salvarSaida(saida) {
+            try {
+                showLoading();
+                saida.timestamp = new Date().toISOString();
+                const newSaidaRef = push(ref(database, 'saidas'));
+                await set(newSaidaRef, saida);
+                showToast('Saída salva com sucesso!');
+                document.getElementById('saidaForm').reset();
+                setDefaultDates();
+            } catch (error) {
+                console.error("Erro ao salvar saída:", error);
+                showToast('Erro ao salvar saída', 'danger');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        window.excluirEntrada = async function(id) {
+            if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+                try {
+                    await remove(ref(database, `entradas/${id}`));
+                    showToast('Entrada excluída com sucesso!');
+                } catch (error) {
+                    console.error("Erro ao excluir entrada:", error);
+                    showToast('Erro ao excluir entrada', 'danger');
+                }
+            }
+        }
+
+        window.excluirSaida = async function(id) {
+            if (confirm('Tem certeza que deseja excluir esta saída?')) {
+                try {
+                    await remove(ref(database, `saidas/${id}`));
+                    showToast('Saída excluída com sucesso!');
+                } catch (error) {
+                    console.error("Erro ao excluir saída:", error);
+                    showToast('Erro ao excluir saída', 'danger');
+                }
+            }
+        }
+
+        // Render functions (XSS Safe)
+        function renderEntradas() {
+            const tbody = document.getElementById('listaEntradas');
+            tbody.innerHTML = '';
+            const entradasFiltradas = entradas.filter(e => e.data && e.data.startsWith(currentFiltroMesEntradas));
+
+            entradasFiltradas.forEach(entrada => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = entrada.numero;
+                row.insertCell().textContent = formatDate(entrada.data);
+                row.insertCell().textContent = entrada.descricao;
+                row.insertCell().textContent = formatCurrency(entrada.valorTotal);
+                row.insertCell().textContent = formatCurrency(entrada.valorRecebido);
+                
+                const categoriaCell = row.insertCell();
+                const categoriaBadge = document.createElement('span');
+                categoriaBadge.className = 'badge bg-success';
+                categoriaBadge.textContent = entrada.categoria;
+                categoriaCell.appendChild(categoriaBadge);
+
+                const acoesCell = row.insertCell();
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-sm btn-outline-danger';
+                deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+                deleteButton.onclick = () => excluirEntrada(entrada.id);
+                acoesCell.appendChild(deleteButton);
+            });
+        }
+
+        function renderSaidas() {
+            const tbody = document.getElementById('listaSaidas');
+            tbody.innerHTML = '';
+            const saidasFiltradas = saidas.filter(s => s.data && s.data.startsWith(currentFiltroMesSaidas));
+
+            saidasFiltradas.forEach(saida => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = formatDate(saida.data);
+                row.insertCell().textContent = saida.descricao;
+                row.insertCell().textContent = formatCurrency(saida.valorTotal);
+                row.insertCell().textContent = formatCurrency(saida.valorPresente);
+
+                const categoriaCell = row.insertCell();
+                const categoriaBadge = document.createElement('span');
+                categoriaBadge.className = 'badge bg-warning';
+                categoriaBadge.textContent = saida.categoria;
+                categoriaCell.appendChild(categoriaBadge);
+
+                const acoesCell = row.insertCell();
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'btn btn-sm btn-outline-danger';
+                deleteButton.innerHTML = '<i class="bi bi-trash"></i>';
+                deleteButton.onclick = () => excluirSaida(saida.id);
+                acoesCell.appendChild(deleteButton);
+            });
+        }
+
+        function updateDashboard() {
+            const totalEntradas = entradas.reduce((sum, e) => sum + parseFloat(e.valorRecebido || 0), 0);
+            const totalSaidas = saidas.reduce((sum, s) => sum + parseFloat(s.valorPresente || 0), 0);
+            const saldo = totalEntradas - totalSaidas;
+
+            document.getElementById('totalEntradas').textContent = formatCurrency(totalEntradas);
+            document.getElementById('totalSaidas').textContent = formatCurrency(totalSaidas);
+            document.getElementById('saldo').textContent = formatCurrency(saldo);
+            
+            const now = new Date();
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            document.getElementById('mesAtual').textContent = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+            updateChart();
+            updateRecentTransactions();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            if (chart) chart.destroy();
+
+            const labels = [];
+            const entradasData = [];
+            const saidasData = [];
+
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                labels.push(d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }));
+
+                const monthEntradas = entradas.filter(e => e.data && e.data.startsWith(monthKey)).reduce((sum, e) => sum + parseFloat(e.valorRecebido || 0), 0);
+                const monthSaidas = saidas.filter(s => s.data && s.data.startsWith(monthKey)).reduce((sum, s) => sum + parseFloat(s.valorPresente || 0), 0);
+                
+                entradasData.push(monthEntradas);
+                saidasData.push(monthSaidas);
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Entradas', data: entradasData, borderColor: '#16a34a', backgroundColor: 'rgba(22, 163, 74, 0.1)', fill: true },
+                        { label: 'Saídas', data: saidasData, borderColor: '#dc2626', backgroundColor: 'rgba(220, 38, 38, 0.1)', fill: true }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { callback: value => formatCurrency(value) } } },
+                    plugins: { tooltip: { callbacks: { label: context => `${context.dataset.label}: ${formatCurrency(context.raw)}` } } }
+                }
+            });
+        }
+
+        function updateRecentTransactions() {
+            const container = document.getElementById('recentTransactions');
+            container.innerHTML = '';
+            const allTransactions = [
+                ...entradas.map(e => ({ ...e, type: 'entrada' })),
+                ...saidas.map(s => ({ ...s, type: 'saida' }))
+            ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
+
+            if (allTransactions.length === 0) {
+                container.innerHTML = '<p class="text-muted">Nenhuma transação recente</p>';
+                return;
+            }
+
+            allTransactions.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'd-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded';
+                
+                const infoDiv = document.createElement('div');
+                const descStrong = document.createElement('strong');
+                descStrong.textContent = t.descricao || 'Sem descrição';
+                const dateSmall = document.createElement('small');
+                dateSmall.className = 'text-muted';
+                dateSmall.textContent = formatDate(t.data);
+                infoDiv.append(descStrong, document.createElement('br'), dateSmall);
+
+                const valueDiv = document.createElement('div');
+                valueDiv.className = 'text-end';
+                const valueSpan = document.createElement('span');
+                valueSpan.className = `fw-bold ${t.type === 'entrada' ? 'text-success' : 'text-danger'}`;
+                const value = t.type === 'entrada' ? t.valorRecebido : t.valorPresente;
+                valueSpan.textContent = `${t.type === 'entrada' ? '+' : '-'}${formatCurrency(value)}`;
+                valueDiv.appendChild(valueSpan);
+
+                div.append(infoDiv, valueDiv);
+                container.appendChild(div);
+            });
+        }
+
+        function setDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('entradaData').value = today;
+            document.getElementById('saidaData').value = today;
+        }
+
+        // Event listeners
+        document.getElementById('entradaForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const entrada = {
+                numero: document.getElementById('entradaNumero').value,
+                data: document.getElementById('entradaData').value,
+                descricao: document.getElementById('entradaDescricao').value,
+                valorTotal: parseFloat(document.getElementById('entradaValorTotal').value),
+                formaPagamento: document.getElementById('entradaFormaPagamento').value,
+                valorRecebido: parseFloat(document.getElementById('entradaValorRecebido').value),
+                categoria: document.getElementById('entradaCategoria').value
+            };
+            salvarEntrada(entrada);
+        });
+
+        document.getElementById('saidaForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const saida = {
+                data: document.getElementById('saidaData').value,
+                descricao: document.getElementById('saidaDescricao').value,
+                valorTotal: parseFloat(document.getElementById('saidaValorTotal').value),
+                valorPresente: parseFloat(document.getElementById('saidaValorPresente').value),
+                categoria: document.getElementById('saidaCategoria').value
+            };
+            salvarSaida(saida);
+        });
+
+        window.filtrarEntradas = function() {
+            currentFiltroMesEntradas = document.getElementById('filtroMesEntradas').value;
+            renderEntradas();
+        }
+
+        window.filtrarSaidas = function() {
+            currentFiltroMesSaidas = document.getElementById('filtroMesSaidas').value;
+            renderSaidas();
+        }
+        
+        // Export function
+        window.exportData = function() {
+            const data = {
+                entradas: entradas,
+                saidas: saidas,
+                exportDate: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `financeiro-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize app
+        function initApp() {
+            showLoading();
+            setDefaultDates();
+            document.getElementById('filtroMesEntradas').value = currentFiltroMesEntradas;
+            document.getElementById('filtroMesSaidas').value = currentFiltroMesSaidas;
+
+            const entradasRef = ref(database, 'entradas');
+            onValue(entradasRef, (snapshot) => {
+                const data = snapshot.val();
+                entradas = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                entradas.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                renderEntradas();
+                updateDashboard();
+                showLoading(false);
+            });
+
+            const saidasRef = ref(database, 'saidas');
+            onValue(saidasRef, (snapshot) => {
+                const data = snapshot.val();
+                saidas = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                saidas.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                renderSaidas();
+                updateDashboard();
+                showLoading(false);
+            });
+            
+            showToast('Aplicação conectada ao Firebase!');
+        }
+
+        // Start app when page loads
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
